@@ -6,7 +6,7 @@
 #![feature(abi_x86_interrupt)]
 
 use core::panic::PanicInfo;
-use ipp_os::println;
+use ipp_os::{println, print, hlt_loop};
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -17,14 +17,14 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     println!("Did not crash, Wow!");
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]

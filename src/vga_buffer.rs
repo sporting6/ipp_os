@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use spin::Mutex;
+
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
@@ -14,8 +15,13 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+    
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
+
 
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
@@ -154,6 +160,7 @@ fn test_println_many() {
         println!("test_println_many output");
     }
 }
+// If stops working: https://os.phil-opp.com/hardware-interrupts/
 #[test_case]
 fn test_println_output() {
     let s = "Some test string that fits on a single line";
