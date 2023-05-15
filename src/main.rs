@@ -12,6 +12,13 @@ use ipp_os::{println, print, hlt_loop};
 pub extern "C" fn _start() -> ! {
     println!("Hello, world!");
     ipp_os::init();
+    
+    let ptr = 0x2031b4 as *mut u32;
+
+    use x86_64::registers::control::Cr3;
+
+    let (level_4_page_table, _) = Cr3::read();
+    println!("Level 4 page table at: {:?}", level_4_page_table.start_address());
 
     #[cfg(test)]
     test_main();
@@ -24,7 +31,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    hlt_loop();
+    ipp_os::hlt_loop();
 }
 
 #[cfg(test)]
