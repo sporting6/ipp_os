@@ -18,7 +18,6 @@ fn panic(info: &PanicInfo) -> ! {
     ipp_os::test_panic_handler(info)
 }
 
-
 use ipp_os::println;
 
 #[test_case]

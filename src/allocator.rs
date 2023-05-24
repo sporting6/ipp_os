@@ -16,9 +16,7 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 use linked_list::LinkedListAllocator;
 
 #[global_allocator]
-static ALLOCATOR: Locked<LinkedListAllocator> =
-    Locked::new(LinkedListAllocator::new());
-
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
 
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,

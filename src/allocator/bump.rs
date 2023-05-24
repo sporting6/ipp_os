@@ -38,7 +38,6 @@ unsafe impl GlobalAlloc for Locked<BumpAllocator> {
     }
 }
 
-
 impl BumpAllocator {
     /// Creates a new empty bump allocator.
     pub const fn new() -> Self {

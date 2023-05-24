@@ -1,8 +1,11 @@
-use alloc::{string::String};
-use crate::vga_buffer::{VGABuffer, Buffer, color::{Color, ColorCode}};
+use crate::vga_buffer::{
+    color::{Color, ColorCode},
+    Buffer, VGABuffer,
+};
+use alloc::string::String;
+use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use core::fmt;
 
 #[macro_export]
 macro_rules! shell_print {
@@ -28,7 +31,7 @@ lazy_static! {
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
-    
+
     interrupts::without_interrupts(|| {
         SHELL.lock().write_fmt(args).unwrap();
     });
@@ -42,14 +45,14 @@ impl fmt::Write for Shell {
 }
 
 pub struct Shell {
-    buffer: &'static mut Buffer, // the VGA Buffer
-    line_start: String, // What is printed before where you can type
-    color: ColorCode, // Color of the fg and bg
+    buffer: &'static mut Buffer,     // the VGA Buffer
+    line_start: String,              // What is printed before where you can type
+    color: ColorCode,                // Color of the fg and bg
     cursor_position: (usize, usize), // Where on the buffer the cursor is (column, row)
 }
 
 impl Shell {
-    pub fn init(&mut self){
+    pub fn init(&mut self) {
         self.clear();
         self.cursor_position = (self.buffer.columns(), self.buffer.rows());
         let line_start = self.line_start.clone();
@@ -57,14 +60,16 @@ impl Shell {
     }
 
     pub fn write_byte(&mut self, byte: u8) {
-        self.buffer.write_byte(self.cursor_position.1, self.cursor_position.0, byte);
+        self.buffer
+            .write_byte(self.cursor_position.1, self.cursor_position.0, byte);
     }
-    
+
     pub fn delete_byte(&mut self) {
-        if (self.cursor_position.0 > self.line_start.as_bytes().len()){
+        if (self.cursor_position.0 > self.line_start.as_bytes().len()) {
             self.cursor_position.0 -= 1;
-            self.buffer.write_byte(self.cursor_position.1, self.cursor_position.0, b' ');
-        }   
+            self.buffer
+                .write_byte(self.cursor_position.1, self.cursor_position.0, b' ');
+        }
     }
 
     pub fn write_string(&mut self, s: &str) {
@@ -78,13 +83,13 @@ impl Shell {
         }
     }
 
-    pub fn set_color(&mut self, color: ColorCode){
+    pub fn set_color(&mut self, color: ColorCode) {
         self.color = color;
     }
 
-    pub fn new_line(&mut self){
+    pub fn new_line(&mut self) {
         self.buffer.new_line();
-        self.cursor_position.1 +=1;
+        self.cursor_position.1 += 1;
     }
 
     pub fn update(&mut self) {
@@ -98,8 +103,7 @@ impl Shell {
         self.line_start = s;
     }
 
-    fn clear(&mut self){
+    fn clear(&mut self) {
         self.buffer.clear();
     }
-    
 }

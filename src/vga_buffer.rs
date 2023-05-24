@@ -1,10 +1,10 @@
 pub mod color;
 
-use volatile::Volatile;
-use color::{ColorCode, Color};
+use color::{Color, ColorCode};
+use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use core::fmt;
+use volatile::Volatile;
 
 #[macro_export]
 macro_rules! print {
@@ -21,7 +21,7 @@ macro_rules! println {
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
-    
+
     interrupts::without_interrupts(|| {
         WRITER.lock().write_fmt(args).unwrap();
     });
@@ -32,7 +32,6 @@ impl fmt::Write for Buffer {
         Ok(())
     }
 }
-
 
 lazy_static! {
     pub static ref WRITER: Mutex<Buffer> = Mutex::new(Buffer {
@@ -60,14 +59,12 @@ pub trait VGABuffer {
     }
 
     // Returns the number of columns in the buffer
-    fn columns(&self) -> usize{
+    fn columns(&self) -> usize {
         BUFFER_WIDTH
     }
     // Sets the color of the buffer
     fn set_color(&mut self, color_code: ColorCode);
-
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
@@ -89,7 +86,7 @@ pub struct Buffer {
     color_code: ColorCode,
 }
 
-impl VGABuffer for Buffer{
+impl VGABuffer for Buffer {
     fn write_byte(&mut self, row: usize, col: usize, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
@@ -105,10 +102,9 @@ impl VGABuffer for Buffer{
         }
     }
 
-
     fn new_line(&mut self) {
         for row in 1..self.rows() {
-            for col in 0..self.columns(){
+            for col in 0..self.columns() {
                 let character = self.buffer.chars[row][col].read();
                 self.buffer.chars[row - 1][col].write(character);
             }
@@ -127,14 +123,13 @@ impl VGABuffer for Buffer{
         }
     }
 
-
     fn clear(&mut self) {
         let blank = ScreenChar {
             ascii_character: b' ',
             color_code: self.color_code,
         };
         for col in 0..self.columns() {
-            for row in 0..self.rows(){
+            for row in 0..self.rows() {
                 self.buffer.chars[row][col].write(blank);
             }
         }
@@ -143,7 +138,6 @@ impl VGABuffer for Buffer{
     fn set_color(&mut self, color_code: ColorCode) {
         self.color_code = color_code;
     }
-
 }
 
 impl Buffer {
@@ -151,23 +145,21 @@ impl Buffer {
         for byte in s.bytes() {
             match byte {
                 // printable ASCII byte or newline
-                0x20..=0x7e | b'\n' => self.write_byte(self.rows() -1, self.column_position, byte),
+                0x20..=0x7e | b'\n' => self.write_byte(self.rows() - 1, self.column_position, byte),
                 // not part of printable ASCII range
-                _ => self.write_byte(self.rows() -1, self.column_position, 0xfe),
+                _ => self.write_byte(self.rows() - 1, self.column_position, 0xfe),
             }
-
         }
     }
 
     pub fn delete_byte(&mut self) {
-        if (self.column_position > 0){
+        if (self.column_position > 0) {
             self.column_position -= 1;
-            self.write_byte(self.rows() -1, self.column_position, b' ');
+            self.write_byte(self.rows() - 1, self.column_position, b' ');
             self.column_position -= 1;
-        }   
+        }
     }
 }
-
 
 //  Tests
 

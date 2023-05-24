@@ -48,7 +48,7 @@ pub fn init_test_idt() {
     TEST_IDT.load();
 }
 
-use ipp_os::{exit_qemu, QemuExitCode, serial_println};
+use ipp_os::{exit_qemu, serial_println, QemuExitCode};
 use x86_64::structures::idt::InterruptStackFrame;
 
 extern "x86-interrupt" fn test_double_fault_handler(
@@ -59,4 +59,3 @@ extern "x86-interrupt" fn test_double_fault_handler(
     exit_qemu(QemuExitCode::Success);
     loop {}
 }
-
