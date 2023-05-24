@@ -8,7 +8,7 @@
 extern crate alloc;
 
 use core::panic::PanicInfo;
-use ipp_os::{println, hlt_loop, memory::{BootInfoFrameAllocator, self}};
+use ipp_os::{println, hlt_loop, memory::{BootInfoFrameAllocator, self}, shell::SHELL};
 use bootloader::{BootInfo, entry_point};
 use ipp_os::allocator;
 use x86_64::VirtAddr;
@@ -24,11 +24,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe {
         BootInfoFrameAllocator::init(&boot_info.memory_map)
     };
-    allocator::init_heap(&mut mapper, &mut frame_allocator)
-        .expect("heap initialization failed");
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    println!("Heheha");
-
+    
+    
     #[cfg(test)]
     test_main();
 
