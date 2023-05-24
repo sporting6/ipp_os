@@ -114,6 +114,20 @@ impl Writer {
         }
     }
 
+    pub fn delete_byte(&mut self){
+        if self.column_position > 0 {
+            self.column_position -= 1;  // Move one column back
+            let row = BUFFER_HEIGHT - 1;
+            let col = self.column_position;
+
+            let color_code = self.color_code;
+            self.buffer.chars[row][col].write(ScreenChar {
+                ascii_character: b' ',  // Set as blank character
+                color_code,
+            });
+        }
+    }
+
      fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {

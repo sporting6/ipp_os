@@ -58,7 +58,6 @@ extern "x86-interrupt" fn double_fault_handler(stack_frame: InterruptStackFrame,
 }
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    print!(".");
     unsafe {
         PICS.lock().notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
     }
@@ -80,9 +79,18 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     let scancode: u8 = unsafe { port.read() };
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
         if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
+            // print key input
+            // if let DecodedKey::Unicode(character) = key {
+            //     println!("Received character: {:?} (Unicode: U+{:04X})", character, character as u32);
+            // }
+            if let DecodedKey::Unicode(character) = key {
+                if character == '\u{8}' {
+                    crate::vga_buffer::WRITER.lock().delete_byte();
+                } else {
+                    print!("{}", character);
+                }
+            } else if let DecodedKey::RawKey(raw_key) = key {
+                print!("{:?}", raw_key);
             }
         }
     }
