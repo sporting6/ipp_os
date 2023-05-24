@@ -6,8 +6,6 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use core::fmt;
 
-
-
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
@@ -95,15 +93,16 @@ impl VGABuffer for Buffer{
     fn write_byte(&mut self, row: usize, col: usize, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
+            b'\x08' => self.delete_byte(),
             byte => {
                 let color_code = self.color_code;
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
                     color_code,
                 });
+                self.column_position += 1;
             }
         }
-        self.column_position += 1;
     }
 
 
@@ -159,6 +158,14 @@ impl Buffer {
 
         }
     }
+
+    pub fn delete_byte(&mut self) {
+        if (self.column_position > 0){
+            self.column_position -= 1;
+            self.write_byte(self.rows() -1, self.column_position, b' ');
+            self.column_position -= 1;
+        }   
+    }
 }
 
 
@@ -175,17 +182,17 @@ fn test_println_many() {
     }
 }
 // If stops working: https://os.phil-opp.com/hardware-interrupts/
-// #[test_case]
-// fn test_println_output() {
-//     use core::fmt::Write;
-//     use x86_64::instructions::interrupts;
-//     let s = "Some test string that fits on a single line";
-//     interrupts::without_interrupts(|| {
-//         let mut writer = WRITER.lock();
-//         writeln!(writer, "\n{}", s).expect("writeln failed");
-//         for (i, c) in s.chars().enumerate() {
-//             let screen_char = writer.buffer.chars[BUFFER_HEIGHT - 2][i].read();
-//             assert_eq!(char::from(screen_char.ascii_character), c);
-//         }
-//     });
-// }
+#[test_case]
+fn test_println_output() {
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
+    let s = "Some test string that fits on a single line";
+    interrupts::without_interrupts(|| {
+        let mut writer = WRITER.lock();
+        writeln!(writer, "\n{}", s).expect("writeln failed");
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.chars[BUFFER_HEIGHT - 2][i].read();
+            assert_eq!(char::from(screen_char.ascii_character), c);
+        }
+    });
+}
