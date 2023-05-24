@@ -1,5 +1,5 @@
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
-use crate::{println, gdt, print};
+use crate::gdt;
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin::Mutex;
@@ -50,7 +50,7 @@ impl InterruptIndex {
 }
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
-    println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+    // println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
 
 extern "x86-interrupt" fn double_fault_handler(stack_frame: InterruptStackFrame, _error_code: u64) -> ! {
@@ -79,19 +79,19 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     let scancode: u8 = unsafe { port.read() };
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
         if let Some(key) = keyboard.process_keyevent(key_event) {
-            // print key input
+            // //print key input
             // if let DecodedKey::Unicode(character) = key {
             //     println!("Received character: {:?} (Unicode: U+{:04X})", character, character as u32);
             // }
-            if let DecodedKey::Unicode(character) = key {
-                if character == '\u{8}' {
-                    crate::vga_buffer::WRITER.lock().delete_byte();
-                } else {
-                    print!("{}", character);
-                }
-            } else if let DecodedKey::RawKey(raw_key) = key {
-                print!("{:?}", raw_key);
-            }
+            // if let DecodedKey::Unicode(character) = key {
+            //     if character == '\u{8}' {
+            //         crate::vga_buffer::WRITER.lock().delete_byte();
+            //     } else {
+            //         print!("{}", character);
+            //     }
+            // } else if let DecodedKey::RawKey(raw_key) = key {
+            //     print!("{:?}", raw_key);
+            // }
         }
     }
 
@@ -102,10 +102,10 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
 
 extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, error_code: x86_64::structures::idt::PageFaultErrorCode,
 ) {
-    println!("EXCEPTION: PAGE FAULT");
-    println!("Accessed Address: {:?}", x86_64::registers::control::Cr2::read());
-    println!("Error Code: {:?}", error_code);
-    println!("{:#?}", stack_frame);
+    // println!("EXCEPTION: PAGE FAULT");
+    // println!("Accessed Address: {:?}", x86_64::registers::control::Cr2::read());
+    // println!("Error Code: {:?}", error_code);
+    // println!("{:#?}", stack_frame);
     crate::hlt_loop();
 }
 

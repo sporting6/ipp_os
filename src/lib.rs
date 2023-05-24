@@ -15,8 +15,10 @@ pub mod interrupts;
 pub mod memory;
 pub mod serial;
 pub mod vga_buffer;
+pub mod shell;
 
 pub fn init() {
+    shell::SHELL.lock().init();
     gdt::init();
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
