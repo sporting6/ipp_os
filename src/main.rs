@@ -8,13 +8,14 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
+use ipp_os::vga_buffer::{WRITER, VGABuffer, self};
+use core::fmt::Write;
 use core::panic::PanicInfo;
-use ipp_os::allocator;
+use ipp_os::{allocator, print};
 use ipp_os::{
     hlt_loop,
     memory::{self, BootInfoFrameAllocator},
     println,
-    shell::SHELL,
 };
 use x86_64::VirtAddr;
 
