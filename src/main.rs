@@ -8,10 +8,10 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use ipp_os::vga_buffer::{WRITER, VGABuffer, self};
-use core::fmt::Write;
 use core::panic::PanicInfo;
-use ipp_os::{allocator, print};
+use ipp_os::vga_buffer::cursor::CursorTrait;
+use ipp_os::vga_buffer::{WRITER};
+use ipp_os::{allocator};
 use ipp_os::{
     hlt_loop,
     memory::{self, BootInfoFrameAllocator},
@@ -29,6 +29,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+    WRITER.lock().cursor.enable(0, 24);
 
     #[cfg(test)]
     test_main();

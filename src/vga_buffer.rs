@@ -1,8 +1,9 @@
 pub mod color;
+pub mod cursor;
 
-use alloc::string::String;
 use color::{Color, ColorCode};
 use core::fmt;
+use cursor::Cursor;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
@@ -50,7 +51,7 @@ pub trait VGABuffer {
 
     // Writes a character with the default color code at cursor's position
     fn write_byte(&mut self, byte: u8);
-    
+
     // Writes a string at the cursor's position
     fn write_string(&mut self, s: &str);
 
@@ -65,7 +66,6 @@ pub trait VGABuffer {
 
     // Sets the position of the cursor
     fn set_cursor(&mut self, row: usize, column: usize);
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,13 +81,9 @@ const BUFFER_WIDTH: usize = 80;
 struct BufferArray {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
-struct Cursor {
-    row: usize,
-    column: usize,
-}
 
 pub struct Buffer {
-    cursor: Cursor,
+    pub cursor: Cursor,
     buffer: &'static mut BufferArray,
     color_code: ColorCode,
 }
@@ -113,8 +109,7 @@ impl VGABuffer for Buffer {
     fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             if self.cursor.column >= BUFFER_WIDTH {
-                self.cursor.row += 1;
-                self.cursor.column = 0;
+                self.new_line();
             }
             match byte {
                 // printable ASCII byte or newline
@@ -123,10 +118,10 @@ impl VGABuffer for Buffer {
                 _ => self.write_byte(0xfe),
             }
         }
-    }    
+    }
 
     fn new_line(&mut self) {
-        if self.cursor.row >= BUFFER_HEIGHT - 1{
+        if self.cursor.row >= BUFFER_HEIGHT - 1 {
             for row in 1..BUFFER_HEIGHT {
                 for col in 0..BUFFER_WIDTH {
                     let character = self.buffer.chars[row][col].read();
@@ -138,7 +133,6 @@ impl VGABuffer for Buffer {
             self.cursor.row += 1;
         }
         self.cursor.column = 0;
-
     }
 
     fn clear_row(&mut self, row: usize) {
@@ -149,6 +143,7 @@ impl VGABuffer for Buffer {
         for col in 0..BUFFER_WIDTH {
             self.buffer.chars[row][col].write(blank);
         }
+        self.set_cursor(row, 0);
     }
 
     fn clear(&mut self) {
@@ -161,6 +156,7 @@ impl VGABuffer for Buffer {
                 self.buffer.chars[row][col].write(blank);
             }
         }
+        self.set_cursor(0, 0);
     }
 
     fn set_color(&mut self, color_code: ColorCode) {
@@ -172,13 +168,14 @@ impl VGABuffer for Buffer {
     }
 
     fn set_cursor(&mut self, column: usize, row: usize) {
-        todo!()
+        self.cursor.row = row;
+        self.cursor.column = column;
     }
 }
 
 impl Buffer {
     pub fn delete_byte(&mut self) {
-        if (self.cursor.column > 0) {
+        if self.cursor.column > 0 {
             self.cursor.column -= 1;
             self.write_byte(b' ');
             self.cursor.column -= 1;
