@@ -8,6 +8,8 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
 
+use self::cursor::CursorTrait;
+
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
@@ -75,8 +77,8 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
-const BUFFER_HEIGHT: usize = 25;
-const BUFFER_WIDTH: usize = 80;
+pub const BUFFER_HEIGHT: usize = 25;
+pub const BUFFER_WIDTH: usize = 80;
 
 struct BufferArray {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
@@ -102,6 +104,7 @@ impl VGABuffer for Buffer {
                     color_code,
                 });
                 self.cursor.column += 1;
+                self.cursor.update();
             }
         }
     }
@@ -144,6 +147,7 @@ impl VGABuffer for Buffer {
             self.buffer.chars[row][col].write(blank);
         }
         self.set_cursor(row, 0);
+        self.cursor.update();
     }
 
     fn clear(&mut self) {

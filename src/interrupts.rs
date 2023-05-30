@@ -90,16 +90,17 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
             if let DecodedKey::Unicode(character) = key {
                 if character == '\u{8}' {
                     crate::vga_buffer::WRITER.lock().delete_byte();
+                    WRITER.lock().cursor.update();
                 } else {
                     print!("{}", character);
-                }
+                    WRITER.lock().cursor.update();
+                };
             } else if let DecodedKey::RawKey(raw_key) = key {
                 print!("{:?}", raw_key);
+                WRITER.lock().cursor.update();
             }
         }
     }
-
-    WRITER.lock().cursor.update(0, 25);
 
     unsafe {
         PICS.lock()

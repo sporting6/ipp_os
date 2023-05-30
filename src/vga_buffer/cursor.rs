@@ -2,7 +2,7 @@ use x86_64::instructions::port::{Port, PortGeneric, ReadWriteAccess};
 
 pub trait CursorTrait {
     // Updates Cursor Position On VGA Buffer
-    fn update(&mut self, col: u8, row: u8);
+    fn update(&mut self);
 
     // Enables the cursor
     fn enable(&self, cursor_start: u32, cursor_end: u32);
@@ -20,17 +20,17 @@ pub struct Cursor {
 }
 
 impl CursorTrait for Cursor {
-    fn update(&mut self, col: u8, row: u8) {
-        let mut port1: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D4);
-        let mut port2: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D5);
+    fn update(&mut self) {
+        let mut port1: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D4);
+        let mut port2: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D5);
 
-        let pos: u16 = (row * (super::BUFFER_WIDTH as u8) + col) as u16;
+        let pos: u16 = (self.row * (super::BUFFER_WIDTH as usize) + self.column) as u16;
 
         unsafe {
-            port1.write(0x0F as u32);
-            port2.write((pos & 0xFF) as u32);
-            port1.write(0x0E as u32);
-            port2.write(((pos >> 8) & 0xFF) as u32);
+            port1.write(0x0F as u8);
+            port2.write((pos & 0xFF) as u8);
+            port1.write(0x0E as u8);
+            port2.write(((pos >> 8) & 0xFF) as u8);
         };
     }
 
@@ -48,15 +48,9 @@ impl CursorTrait for Cursor {
             port2.write((y & 0xE0 as u32) | cursor_end);
         }
     }
-
+    
     fn disable(&self) {
-        let mut port1: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D4);
-        let mut port2: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D5);
-
-        unsafe {
-            port1.write(0x0A);
-            port2.write(0x20);
-        }
+        todo!()
     }
 
     fn get_vga_position(&self) {

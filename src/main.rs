@@ -8,6 +8,7 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
+use x86_64::instructions::port::{PortGeneric, ReadWriteAccess, Port};
 use core::panic::PanicInfo;
 use ipp_os::vga_buffer::cursor::CursorTrait;
 use ipp_os::vga_buffer::{WRITER};
@@ -30,6 +31,18 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
     WRITER.lock().cursor.enable(0, 24);
+
+    let pos: u16 = (5* (ipp_os::vga_buffer::BUFFER_WIDTH as usize) + 5) as u16;
+
+    let mut port1: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D4);
+    let mut port2: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D5);
+
+    unsafe {
+        port1.write(0x0F as u32);
+        port2.write((pos & 0xFF) as u32);
+        port1.write(0x0E as u32);
+        port2.write(((pos >> 8) & 0xFF) as u32);
+    };
 
     #[cfg(test)]
     test_main();
