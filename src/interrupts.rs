@@ -91,6 +91,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                 if character == '\u{8}' {
                     crate::vga_buffer::WRITER.lock().delete_byte();
                     WRITER.lock().cursor.update();
+                } else if character == '\n' {
+                    crate::vga_buffer::WRITER.lock().run_command();
+                    WRITER.lock().cursor.update();
                 } else {
                     print!("{}", character);
                     WRITER.lock().cursor.update();

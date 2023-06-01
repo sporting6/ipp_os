@@ -48,7 +48,7 @@ impl CursorTrait for Cursor {
             port2.write((y & 0xE0 as u32) | cursor_end);
         }
     }
-    
+
     fn disable(&self) {
         todo!()
     }

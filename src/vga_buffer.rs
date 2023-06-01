@@ -1,8 +1,12 @@
 pub mod color;
 pub mod cursor;
 
+use alloc::{
+    format,
+    string::{String, ToString},
+};
 use color::{Color, ColorCode};
-use core::fmt;
+use core::{error::Error, fmt};
 use cursor::Cursor;
 use lazy_static::lazy_static;
 use spin::Mutex;
@@ -73,7 +77,7 @@ pub trait VGABuffer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 struct ScreenChar {
-    ascii_character: u8,
+    pub ascii_character: u8,
     color_code: ColorCode,
 }
 
@@ -93,7 +97,9 @@ pub struct Buffer {
 impl VGABuffer for Buffer {
     fn write_byte(&mut self, byte: u8) {
         match byte {
-            b'\n' => self.new_line(),
+            b'\n' => {
+                self.new_line();
+            }
             byte => {
                 if self.cursor.column == BUFFER_WIDTH {
                     self.new_line();
@@ -136,6 +142,7 @@ impl VGABuffer for Buffer {
             self.cursor.row += 1;
         }
         self.cursor.column = 0;
+        self.write_string(" $ ");
     }
 
     fn clear_row(&mut self, row: usize) {
@@ -161,6 +168,7 @@ impl VGABuffer for Buffer {
             }
         }
         self.set_cursor(0, 0);
+        self.write_string(" $ ")
     }
 
     fn set_color(&mut self, color_code: ColorCode) {
@@ -179,10 +187,54 @@ impl VGABuffer for Buffer {
 
 impl Buffer {
     pub fn delete_byte(&mut self) {
-        if self.cursor.column > 0 {
+        if self.cursor.column > 3 {
             self.cursor.column -= 1;
             self.write_byte(b' ');
             self.cursor.column -= 1;
+        }
+    }
+
+    pub fn run_command(&mut self) {
+        let mut row = String::new();
+        for i in 3..BUFFER_WIDTH {
+            let c = self.buffer.chars[self.cursor.row][i].read().ascii_character;
+            row.push(c as char);
+        }
+
+        self.command(row)
+    }
+
+    fn command(&mut self, s: String) {
+        let command = &s.split_whitespace().enumerate().next().unwrap();
+        match command.1 {
+            "echo" => {
+                let echo = &s[4..];
+                self.cursor.row += 1;
+                self.cursor.column = 0;
+                self.write_string(echo);
+                self.new_line();
+            }
+            _ => self.write_string("Incorrect Command"),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct InvalidCommandError {
+    message: String,
+}
+impl Error for InvalidCommandError {}
+
+impl fmt::Display for InvalidCommandError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl InvalidCommandError {
+    fn new(message: &str) -> InvalidCommandError {
+        InvalidCommandError {
+            message: message.to_string(),
         }
     }
 }
