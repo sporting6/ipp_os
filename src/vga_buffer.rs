@@ -2,8 +2,7 @@ pub mod color;
 pub mod cursor;
 
 use alloc::{
-    format,
-    string::{String, ToString},
+    string::{String, ToString}, vec::Vec,
 };
 use color::{Color, ColorCode};
 use core::{error::Error, fmt};
@@ -11,6 +10,8 @@ use cursor::Cursor;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
+
+use crate::shell::echo;
 
 use self::cursor::CursorTrait;
 
@@ -201,20 +202,17 @@ impl Buffer {
             row.push(c as char);
         }
 
-        self.command(row)
+        self.parse(row)
     }
 
-    fn command(&mut self, s: String) {
-        let command = &s.split_whitespace().enumerate().next().unwrap();
-        match command.1 {
-            "echo" => {
-                let echo = &s[4..];
-                self.cursor.row += 1;
-                self.cursor.column = 0;
-                self.write_string(echo);
-                self.new_line();
+    fn parse(&mut self, s: String) {
+
+        let args: Vec<&str> = s.split_whitespace().collect();                
+        if let Some(first_word) = args.get(0) {
+            match first_word {
+                &"echo" => echo(args),
+                _ => self.write_string("Incorrect Command"),
             }
-            _ => self.write_string("Incorrect Command"),
         }
     }
 }
@@ -232,7 +230,7 @@ impl fmt::Display for InvalidCommandError {
 }
 
 impl InvalidCommandError {
-    fn new(message: &str) -> InvalidCommandError {
+    pub fn new(message: &str) -> InvalidCommandError {
         InvalidCommandError {
             message: message.to_string(),
         }
