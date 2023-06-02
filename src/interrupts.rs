@@ -1,6 +1,6 @@
 use crate::{
     gdt, print, println,
-    vga_buffer::{cursor::CursorTrait, WRITER},
+    vga_buffer::{cursor::CursorTrait, WRITER}, shell::run_command,
 };
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -89,10 +89,10 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
             // }
             if let DecodedKey::Unicode(character) = key {
                 if character == '\u{8}' {
-                    crate::vga_buffer::WRITER.lock().delete_byte();
+                    WRITER.lock().delete_byte();
                     WRITER.lock().cursor.update();
                 } else if character == '\n' {
-                    crate::vga_buffer::WRITER.lock().run_command();
+                    run_command();
                     WRITER.lock().cursor.update();
                 } else {
                     print!("{}", character);

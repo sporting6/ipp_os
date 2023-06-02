@@ -2,7 +2,7 @@ use x86_64::instructions::port::{Port, PortGeneric, ReadWriteAccess};
 
 pub trait CursorTrait {
     // Updates Cursor Position On VGA Buffer
-    fn update(&mut self);
+    fn update(&self);
 
     // Enables the cursor
     fn enable(&self, cursor_start: u32, cursor_end: u32);
@@ -20,7 +20,7 @@ pub struct Cursor {
 }
 
 impl CursorTrait for Cursor {
-    fn update(&mut self) {
+    fn update(&self) {
         let mut port1: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D4);
         let mut port2: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D5);
 

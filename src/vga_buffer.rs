@@ -2,7 +2,7 @@ pub mod color;
 pub mod cursor;
 
 use alloc::{
-    string::{String, ToString}, vec::Vec,
+    string::{String, ToString},
 };
 use color::{Color, ColorCode};
 use core::{error::Error, fmt};
@@ -10,8 +10,6 @@ use cursor::Cursor;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
-
-use crate::shell::echo;
 
 use self::cursor::CursorTrait;
 
@@ -77,7 +75,7 @@ pub trait VGABuffer {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
-struct ScreenChar {
+pub struct ScreenChar {
     pub ascii_character: u8,
     color_code: ColorCode,
 }
@@ -85,13 +83,13 @@ struct ScreenChar {
 pub const BUFFER_HEIGHT: usize = 25;
 pub const BUFFER_WIDTH: usize = 80;
 
-struct BufferArray {
-    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+pub struct BufferArray {
+    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Buffer {
     pub cursor: Cursor,
-    buffer: &'static mut BufferArray,
+    pub buffer: &'static mut BufferArray,
     color_code: ColorCode,
 }
 
@@ -195,26 +193,6 @@ impl Buffer {
         }
     }
 
-    pub fn run_command(&mut self) {
-        let mut row = String::new();
-        for i in 3..BUFFER_WIDTH {
-            let c = self.buffer.chars[self.cursor.row][i].read().ascii_character;
-            row.push(c as char);
-        }
-
-        self.parse(row)
-    }
-
-    fn parse(&mut self, s: String) {
-
-        let args: Vec<&str> = s.split_whitespace().collect();                
-        if let Some(first_word) = args.get(0) {
-            match first_word {
-                &"echo" => echo(args),
-                _ => self.write_string("Incorrect Command"),
-            }
-        }
-    }
 }
 
 #[derive(Debug)]
