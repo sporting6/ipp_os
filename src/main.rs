@@ -13,24 +13,32 @@ use ipp_os::{
     allocator, hlt_loop,
     memory::{self, BootInfoFrameAllocator},
     println,
-    vga_buffer::{cursor::CursorTrait, VGABuffer, WRITER},
+    vga_buffer::{cursor::CursorTrait, VGABuffer, WRITER}, shell::{SHELL},
 };
 use x86_64::VirtAddr;
 
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    ipp_os::init();
-    println!("Loading Shell....");
-
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    WRITER.lock().cursor.enable(0, 24);
-    WRITER.lock().clear();
-    WRITER.lock().cursor.update();
+    {
+        let mut writer = WRITER.lock();
+        writer.cursor.enable(0, 24);
+        writer.clear();
+        writer.cursor.update();
+    }
+    
+
+    match SHELL.lock().start_shell() {
+        Ok(()) => (),
+        Err(e) => println!("Error Starting Shell: {}", e),
+    }
+    ipp_os::init();
+
 
     #[cfg(test)]
     test_main();

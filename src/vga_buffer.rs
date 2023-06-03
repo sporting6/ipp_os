@@ -141,7 +141,6 @@ impl VGABuffer for Buffer {
             self.cursor.row += 1;
         }
         self.cursor.column = 0;
-        self.write_string(" $ ");
     }
 
     fn clear_row(&mut self, row: usize) {
@@ -152,7 +151,7 @@ impl VGABuffer for Buffer {
         for col in 0..BUFFER_WIDTH {
             self.buffer.chars[row][col].write(blank);
         }
-        self.set_cursor(row, 0);
+        self.cursor.row = row;
         self.cursor.update();
     }
 
@@ -167,7 +166,6 @@ impl VGABuffer for Buffer {
             }
         }
         self.set_cursor(0, 0);
-        self.write_string(" $ ")
     }
 
     fn set_color(&mut self, color_code: ColorCode) {
@@ -192,7 +190,6 @@ impl Buffer {
             self.cursor.column -= 1;
         }
     }
-
 }
 
 #[derive(Debug)]
