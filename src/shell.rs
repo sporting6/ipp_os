@@ -3,19 +3,22 @@ pub mod commands;
 use alloc::{string::String, vec::Vec};
 use spin::Mutex;
 
-use crate::{vga_buffer::{VGABuffer, WRITER, BUFFER_WIDTH, cursor, BUFFER_HEIGHT}, println};
+use crate::{
+    println,
+    vga_buffer::{VGABuffer, BUFFER_WIDTH, WRITER},
+};
 use lazy_static::lazy_static;
 
-use self::commands::{echo, cowsay};
+use self::commands::{cowsay, echo};
 
 lazy_static! {
-    pub static ref SHELL: Mutex<Shell> = Mutex::new(Shell { 
+    pub static ref SHELL: Mutex<Shell> = Mutex::new(Shell {
         prompt: String::from(" $ "),
         active: false,
     });
 }
 
-pub struct Shell{
+pub struct Shell {
     prompt: String,
     active: bool,
 }
@@ -28,19 +31,18 @@ impl Shell {
         }
     }
 
-    pub fn run_command(&self) -> Result<(), &'static str>{
+    pub fn run_command(&self) -> Result<(), &'static str> {
         if self.active {
-            match parse(get_command().expect("Invalid Row")){
+            match parse(get_command().expect("Invalid Row")) {
                 Ok(ok) => return Ok(ok),
                 Err(e) => return Err(e),
             }
-        }
-        else {
+        } else {
             Err("Error Running Command")
         }
     }
 
-    pub fn start_shell(&mut self) -> Result<(), &'static str>{
+    pub fn start_shell(&mut self) -> Result<(), &'static str> {
         println!("Loading Shell....");
         self.active = true;
 
@@ -54,15 +56,13 @@ impl Shell {
     }
 }
 
-
-
 fn get_command() -> Result<String, &'static str> {
     let mut to_return = String::new();
     let writer = WRITER.lock();
 
     let start_row: usize = {
         let mut result = 0;
-        for i in 0..writer.cursor.row+1 {
+        for i in 0..writer.cursor.row + 1 {
             if writer.buffer.chars[i][1].read().ascii_character == b'$' {
                 result = i;
             }
@@ -87,7 +87,6 @@ fn get_command() -> Result<String, &'static str> {
     Ok(to_return)
 }
 
-
 fn parse(s: String) -> Result<(), &'static str> {
     let args: Vec<String> = parse_arguments(&s);
     if !args.is_empty() {
@@ -108,7 +107,6 @@ fn parse(s: String) -> Result<(), &'static str> {
         Err("Invalid Command")
     }
 }
-
 
 fn parse_arguments(input: &str) -> Vec<String> {
     let mut args = Vec::new();

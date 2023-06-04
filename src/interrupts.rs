@@ -1,6 +1,7 @@
 use crate::{
     gdt, print, println,
-    vga_buffer::{cursor::CursorTrait, WRITER, VGABuffer}, shell::{SHELL},
+    shell::SHELL,
+    vga_buffer::{cursor::CursorTrait, VGABuffer, WRITER},
 };
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -92,7 +93,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                     WRITER.lock().delete_byte();
                     WRITER.lock().cursor.update();
                 } else if character == '\n' {
-                    match SHELL.lock().run_command(){
+                    match SHELL.lock().run_command() {
                         Ok(()) => (),
                         Err(e) => println!("\n{}", e),
                     };

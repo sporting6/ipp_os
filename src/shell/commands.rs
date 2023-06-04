@@ -1,9 +1,13 @@
-use alloc::{vec::{self, Vec}, string::{String, ToString}, format};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
-use crate::vga_buffer::{WRITER, VGABuffer};
+use crate::vga_buffer::{VGABuffer, WRITER};
 
 pub fn echo(args: Vec<String>) -> Result<(), &'static str> {
-    let to_echo = match args.get(0){
+    let to_echo = match args.get(0) {
         Some(s) => s,
         None => "",
     };
@@ -11,7 +15,7 @@ pub fn echo(args: Vec<String>) -> Result<(), &'static str> {
     let mut writer = WRITER.lock();
     writer.new_line();
     writer.write_string(&to_echo);
-    
+
     Ok(())
 }
 
@@ -49,7 +53,11 @@ pub fn cowsay(args: Vec<String>) -> Result<(), &'static str> {
 
     writer.write_string(&horizontal_line);
     for line in message {
-        writer.write_string(&format!("\n| {}{} |", line, " ".repeat(BUBBLE_WIDTH - line.len() - 2)))
+        writer.write_string(&format!(
+            "\n| {}{} |",
+            line,
+            " ".repeat(BUBBLE_WIDTH - line.len() - 2)
+        ))
     }
 
     writer.write_string(&horizontal_line);
@@ -61,6 +69,3 @@ pub fn cowsay(args: Vec<String>) -> Result<(), &'static str> {
 
     Ok(())
 }
-
-
-

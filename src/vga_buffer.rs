@@ -1,11 +1,8 @@
 pub mod color;
 pub mod cursor;
 
-use alloc::{
-    string::{String, ToString},
-};
 use color::{Color, ColorCode};
-use core::{error::Error, fmt};
+use core::fmt;
 use cursor::Cursor;
 use lazy_static::lazy_static;
 use spin::Mutex;
@@ -188,26 +185,6 @@ impl Buffer {
             self.cursor.column -= 1;
             self.write_byte(b' ');
             self.cursor.column -= 1;
-        }
-    }
-}
-
-#[derive(Debug)]
-struct InvalidCommandError {
-    message: String,
-}
-impl Error for InvalidCommandError {}
-
-impl fmt::Display for InvalidCommandError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl InvalidCommandError {
-    pub fn new(message: &str) -> InvalidCommandError {
-        InvalidCommandError {
-            message: message.to_string(),
         }
     }
 }

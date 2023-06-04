@@ -13,7 +13,8 @@ use ipp_os::{
     allocator, hlt_loop,
     memory::{self, BootInfoFrameAllocator},
     println,
-    vga_buffer::{cursor::CursorTrait, VGABuffer, WRITER}, shell::{SHELL},
+    shell::SHELL,
+    vga_buffer::{cursor::CursorTrait, VGABuffer, WRITER},
 };
 use x86_64::VirtAddr;
 
@@ -31,14 +32,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         writer.clear();
         writer.cursor.update();
     }
-    
 
     match SHELL.lock().start_shell() {
         Ok(()) => (),
         Err(e) => println!("Error Starting Shell: {}", e),
     }
     ipp_os::init();
-
 
     #[cfg(test)]
     test_main();
