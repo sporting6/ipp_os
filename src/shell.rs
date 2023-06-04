@@ -3,7 +3,7 @@ pub mod commands;
 use alloc::{string::String, vec::Vec};
 use spin::Mutex;
 
-use crate::{vga_buffer::{VGABuffer, WRITER, BUFFER_WIDTH}, println};
+use crate::{vga_buffer::{VGABuffer, WRITER, BUFFER_WIDTH, cursor, BUFFER_HEIGHT}, println};
 use lazy_static::lazy_static;
 
 use self::commands::{echo, cowsay};
@@ -30,7 +30,7 @@ impl Shell {
 
     pub fn run_command(&self) -> Result<(), &'static str>{
         if self.active {
-            match parse(get_row().expect("Invalid Row")){
+            match parse(get_command().expect("Invalid Row")){
                 Ok(ok) => return Ok(ok),
                 Err(e) => return Err(e),
             }
@@ -56,35 +56,85 @@ impl Shell {
 
 
 
-fn get_row() -> Result<String, &'static str> {
-    let mut row = String::new();
-    for i in 3..BUFFER_WIDTH {
-        let writer = WRITER.lock();
-        let c = writer.buffer.chars[writer.cursor.row][i].read().ascii_character;
-        row.push(c as char);
+fn get_command() -> Result<String, &'static str> {
+    let mut to_return = String::new();
+    let writer = WRITER.lock();
+
+    let start_row: usize = {
+        let mut result = 0;
+        for i in 0..writer.cursor.row+1 {
+            if writer.buffer.chars[i][1].read().ascii_character == b'$' {
+                result = i;
+            }
+        }
+        result
     };
-    Ok(row)
+
+    for i in 3..BUFFER_WIDTH {
+        let c = writer.buffer.chars[start_row][i].read().ascii_character;
+        to_return.push(c as char);
+    }
+
+    if start_row < writer.cursor.row {
+        for y in start_row + 1..writer.cursor.row + 1 {
+            for x in 0..BUFFER_WIDTH {
+                let c = writer.buffer.chars[y][x].read().ascii_character;
+                to_return.push(c as char);
+            }
+        }
+    }
+
+    Ok(to_return)
 }
 
-fn parse(s: String) -> Result<(), &'static str> {
-    let mut args: Vec<&str> = s.split_whitespace().collect(); 
-    if args .len() > 0 {
-        let command = args.get(0).copied();  
 
-        args.remove(0);
-    
-        if let Some(first_word) = command {
-            let mut to_return;
+fn parse(s: String) -> Result<(), &'static str> {
+    let args: Vec<String> = parse_arguments(&s);
+    if !args.is_empty() {
+        let command = args[0].clone();
+        let mut rest = args;
+        rest.remove(0);
+
+        if let Some(first_word) = Some(command.as_str()) {
             match first_word {
-                "echo" => to_return = echo(args),
-                "cowsay" => to_return = cowsay(args),
-                _ => to_return = Err("Invalid Command"),
+                "echo" => echo(rest),
+                "cowsay" => cowsay(rest),
+                _ => Err("Invalid Command"),
             }
-            return to_return;
         } else {
             Err("Invalid Command")
         }
     } else {
         Err("Invalid Command")
     }
+}
+
+
+fn parse_arguments(input: &str) -> Vec<String> {
+    let mut args = Vec::new();
+    let mut current_arg = String::new();
+    let mut in_quotes = false;
+
+    for c in input.chars() {
+        match c {
+            ' ' if !in_quotes => {
+                if !current_arg.is_empty() {
+                    args.push(current_arg.clone());
+                    current_arg.clear();
+                }
+            }
+            '"' => {
+                in_quotes = !in_quotes;
+            }
+            _ => {
+                current_arg.push(c);
+            }
+        }
+    }
+
+    if !current_arg.is_empty() {
+        args.push(current_arg);
+    }
+
+    args
 }

@@ -1,17 +1,12 @@
-use core::fmt::Write;
-
-use alloc::{vec::Vec, string::String};
+use alloc::{vec::{self, Vec}, string::{String, ToString}, format};
 
 use crate::vga_buffer::{WRITER, VGABuffer};
 
-use super::{SHELL};
-
-pub fn echo(args: Vec<&str>) -> Result<(), &'static str> {
-    let mut to_echo = String::new();
-    for s in args{
-        to_echo.push(' ');
-        to_echo.push_str(&s);
-    }
+pub fn echo(args: Vec<String>) -> Result<(), &'static str> {
+    let to_echo = match args.get(0){
+        Some(s) => s,
+        None => "",
+    };
 
     let mut writer = WRITER.lock();
     writer.new_line();
@@ -20,29 +15,41 @@ pub fn echo(args: Vec<&str>) -> Result<(), &'static str> {
     Ok(())
 }
 
-pub fn cowsay(args: Vec<&str>) -> Result<(), &'static str> {
-    let mut message = String::new();
-    for s in args{
-        message.push(' ');
-        message.push_str(&s);
-    }
+const BUBBLE_WIDTH: usize = 30;
 
-    let message_lines = message.lines().collect::<Vec<_>>();
-    let message_width = message_lines.iter().map(|line| line.len()).max().unwrap_or(0);
+pub fn cowsay(args: Vec<String>) -> Result<(), &'static str> {
+    let message: Vec<String> = match args.get(0) {
+        Some(s) => {
+            let mut to_return: Vec<String> = Vec::new();
+            let mut current_line = String::new();
 
-    let bubble_width = message_width + 2;
-    let mut horizontal_line = String::from("\n ");
-    horizontal_line.push_str(&"-".repeat(bubble_width));
+            for word in s.split_whitespace() {
+                if current_line.len() + word.len() + 1 <= BUBBLE_WIDTH {
+                    current_line.push_str(word);
+                    current_line.push(' ');
+                } else {
+                    to_return.push(current_line.trim().to_string());
+                    current_line = String::from(word);
+                    current_line.push(' ');
+                }
+            }
+
+            if !current_line.is_empty() {
+                to_return.push(current_line.trim().to_string());
+            }
+
+            to_return
+        }
+        None => return Err("Invalid Message"),
+    };
+
+    let horizontal_line = format!("\n {}", "-".repeat(BUBBLE_WIDTH));
 
     let mut writer = WRITER.lock();
 
     writer.write_string(&horizontal_line);
-    for (i, line) in message_lines.iter().enumerate() {
-        let mut s = String::from("\n| ");
-        s.push_str(line);
-        s.push_str(&" ".repeat(message_width - line.len()));
-        s.push_str(" |");
-        writer.write_string(&s);
+    for line in message {
+        writer.write_string(&format!("\n| {}{} |", line, " ".repeat(BUBBLE_WIDTH - line.len() - 2)))
     }
 
     writer.write_string(&horizontal_line);
@@ -51,5 +58,9 @@ pub fn cowsay(args: Vec<&str>) -> Result<(), &'static str> {
     writer.write_string("\n            (__)\\       )\\/\\");
     writer.write_string("\n                ||----w |");
     writer.write_string("\n                ||     ||");
+
     Ok(())
 }
+
+
+
