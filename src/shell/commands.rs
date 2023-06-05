@@ -3,6 +3,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+use x86_64::instructions::random::{self, RdRand};
 
 use crate::vga_buffer::{VGABuffer, WRITER};
 
@@ -104,3 +105,53 @@ pub fn calc(args: Vec<String>) -> Result<(), &'static str> {
 
     Ok(())
 }
+
+pub fn rockpaperscissors(args: Vec<String>) -> Result<(), &'static str> {
+    let p_choice = match args.get(0).map(|s| &**s) {
+        Some("rock") => 0,
+        Some("paper") => 1,
+        Some("scissors") => 2,
+        _ => return Err("Invalid Argument"),
+    };
+
+
+    let c_choice: u16 = 1;
+
+    WRITER.lock().write_string("\n 3 ");
+    delay_one_second();
+    WRITER.lock().write_string(" 2 ");
+    delay_one_second();
+    WRITER.lock().write_string(" 1 ");
+
+    WRITER.lock().write_string(&format!("\n You Chose: {}",match p_choice{
+        0 => "Rock",
+        1 => "Paper",
+        2 => "Scissors",
+        _ => "",
+    }));
+
+    WRITER.lock().write_string(&format!("\n I Chose: {}", match c_choice {
+        0 => "Rock",
+        1 => "Paper",
+        2 => "Scissors",
+        _ => "",
+    }));
+
+
+    Ok(())
+}
+
+fn delay_one_second() {
+    // Adjust this value based on your system's clock speed and desired accuracy
+    const LOOP_COUNT: u32 = 500_000;
+
+    for _ in 0..LOOP_COUNT {
+        // Perform some non-optimizeable operation to occupy the CPU
+        // Here, we use a volatile read from memory to prevent the loop from being optimized away
+        unsafe {
+            core::ptr::read_volatile(&0);
+        }
+    }
+}
+
+
