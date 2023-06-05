@@ -69,3 +69,38 @@ pub fn cowsay(args: Vec<String>) -> Result<(), &'static str> {
 
     Ok(())
 }
+
+pub fn calc(args: Vec<String>) -> Result<(), &'static str> {
+    if args.len() != 3 {
+        return Err("Invalid number of arguments");
+    }
+
+    let num1: i32 = match args[0].parse() {
+        Ok(num) => num,
+        Err(_) => return Err("Invalid number"),
+    };
+
+    let operator = &args[1];
+
+    let num2: i32 = match args[2].parse() {
+        Ok(num) => num,
+        Err(_) => return Err("Invalid number"),
+    };
+
+    let result = match operator.as_str() {
+        "+" => num1 + num2,
+        "-" => num1 - num2,
+        "*" => num1 * num2,
+        "/" => {
+            if num2 == 0 {
+                return Err("Division by zero");
+            }
+            num1 / num2
+        }
+        _ => return Err("Invalid operator"),
+    };
+
+    WRITER.lock().write_string(&format!("\nResult: {}", result));
+
+    Ok(())
+}
