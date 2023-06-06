@@ -9,7 +9,7 @@ use crate::{
 };
 use lazy_static::lazy_static;
 
-use self::commands::{cowsay, echo, calc, rockpaperscissors};
+use self::commands::{cowsay, echo, calc, rockpaperscissors, help};
 
 lazy_static! {
     pub static ref SHELL: Mutex<Shell> = Mutex::new(Shell {
@@ -99,7 +99,8 @@ fn parse(s: String) -> Result<(), &'static str> {
                 "echo" => echo(rest),
                 "cowsay" => cowsay(rest),
                 "calc" => calc(rest),
-                "rpc" => rockpaperscissors(rest),
+                "rps" => rockpaperscissors(rest),
+                "help" => help(rest),
                 _ => Err("Invalid Command"),
             }
         } else {

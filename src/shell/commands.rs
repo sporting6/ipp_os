@@ -3,9 +3,21 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use x86_64::instructions::random::{self, RdRand};
-
 use crate::vga_buffer::{VGABuffer, WRITER};
+
+
+pub fn help(_args: Vec<String>) -> Result<(), &'static str> {
+    let mut writer = WRITER.lock();
+    writer.write_string("\nPossible Commands:");
+    writer.write_string("\necho args");
+    writer.write_string("\nrps action");
+    writer.write_string("\ncowsay args");
+    writer.write_string("\ncalc num1 operator num2");
+
+    Ok(())
+}
+
+
 
 pub fn echo(args: Vec<String>) -> Result<(), &'static str> {
     let to_echo = match args.get(0) {
