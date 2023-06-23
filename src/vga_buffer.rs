@@ -68,6 +68,9 @@ pub trait VGABuffer {
 
     // Sets the position of the cursor
     fn set_cursor(&mut self, row: usize, column: usize);
+
+    // returns the byte at (col, row)
+    fn read(&self, row: usize, col: usize) -> u8;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -176,6 +179,10 @@ impl VGABuffer for Buffer {
     fn set_cursor(&mut self, column: usize, row: usize) {
         self.cursor.row = row;
         self.cursor.column = column;
+    }
+
+    fn read(&self, row: usize, col: usize) -> u8 {
+        self.buffer.chars[row][col].read().ascii_character
     }
 }
 

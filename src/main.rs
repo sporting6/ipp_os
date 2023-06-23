@@ -37,6 +37,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         Ok(()) => (),
         Err(e) => println!("Error Starting Shell: {}", e),
     }
+
     ipp_os::init();
 
     #[cfg(test)]

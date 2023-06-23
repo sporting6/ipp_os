@@ -71,14 +71,14 @@ fn get_command() -> Result<String, &'static str> {
     };
 
     for i in 3..BUFFER_WIDTH {
-        let c = writer.buffer.chars[start_row][i].read().ascii_character;
+        let c = writer.read(start_row, i);
         to_return.push(c as char);
     }
 
     if start_row < writer.cursor.row {
         for y in start_row + 1..writer.cursor.row + 1 {
             for x in 0..BUFFER_WIDTH {
-                let c = writer.buffer.chars[y][x].read().ascii_character;
+                let c = writer.read(y, x);
                 to_return.push(c as char);
             }
         }
