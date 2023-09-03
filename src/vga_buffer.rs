@@ -1,7 +1,9 @@
 use core::fmt;
+use alloc::string::String;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
+use x86_64::instructions::port::{Port, PortGeneric, ReadWriteAccess};
 
 lazy_static! {
     /// A global `Writer` instance that can be used for printing to the VGA text buffer.
@@ -141,6 +143,36 @@ impl Writer {
             self.buffer.chars[row][col].write(blank);
         }
     }
+
+    pub fn handle_backspace(&mut self) {
+        if self.column_position > 0 {
+            // Calculate the position of the previous character
+            let row = BUFFER_HEIGHT - 1;
+            let col = self.column_position - 1;
+
+            // Overwrite the character with a space
+            let color_code = self.color_code;
+            self.buffer.chars[row][col].write(ScreenChar {
+                ascii_character: b' ',
+                color_code,
+            });
+
+            // Move the cursor back
+            self.column_position -= 1;
+        }
+    }
+
+    pub async fn get_column_pos(&self) -> usize {
+        self.column_position
+    }
+
+    pub fn get_row(&self) -> String {
+        let mut to_return = String::new();
+        for x in 0..self.column_position{
+            to_return.push(self.buffer.chars[BUFFER_HEIGHT-1][x].read().ascii_character as char);
+        };
+        to_return
+    }
 }
 
 impl fmt::Write for Writer {
@@ -173,6 +205,36 @@ pub fn _print(args: fmt::Arguments) {
     interrupts::without_interrupts(|| {
         WRITER.lock().write_fmt(args).unwrap();
     });
+}
+
+pub async fn enable_cursor(cursor_start: u32, cursor_end: u32) {
+    let mut port1: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D4);
+    let mut port2: PortGeneric<u32, ReadWriteAccess> = Port::new(0x3D5);
+
+    unsafe {
+        port1.write(0x0A as u32);
+        let x = port2.read();
+        port2.write((x & 0xC0 as u32) | cursor_start);
+
+        port1.write(0x0B as u32);
+        let y = port2.read();
+        port2.write((y & 0xE0 as u32) | cursor_end);
+    }
+}
+
+pub async fn update_cursor() {
+    let mut port1: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D4);
+    let mut port2: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D5);
+
+    let pos: u16 = (((BUFFER_HEIGHT - 1) * (BUFFER_WIDTH as usize))
+        + WRITER.lock().get_column_pos().await) as u16;
+
+    unsafe {
+        port1.write(0x0F as u8);
+        port2.write((pos & 0xFF) as u8);
+        port1.write(0x0E as u8);
+        port2.write(((pos >> 8) & 0xFF) as u8);
+    };
 }
 
 #[test_case]

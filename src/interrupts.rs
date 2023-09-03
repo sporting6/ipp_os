@@ -1,4 +1,4 @@
-use crate::{gdt, hlt_loop, println, task::spawner::SPAWNER};
+use crate::{gdt, hlt_loop, println, task::spawner::SPAWNER, vga_buffer};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
@@ -73,7 +73,7 @@ extern "x86-interrupt" fn double_fault_handler(
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
     // print!(".");
-    SPAWNER.lock().add(example_task());
+    SPAWNER.lock().add(vga_buffer::update_cursor());
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
@@ -97,14 +97,4 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
 fn test_breakpoint_exception() {
     // invoke a breakpoint exception
     x86_64::instructions::interrupts::int3();
-}
-
-
-async fn async_number() -> u32 {
-    42
-}
-
-async fn example_task() {
-    let number = async_number().await;
-    println!("async number: {}", number);
 }

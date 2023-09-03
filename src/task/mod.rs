@@ -10,7 +10,7 @@ pub mod executor;
 pub mod keyboard;
 pub mod simple_executor;
 pub mod spawner;
-
+pub mod task_loader;
 
 pub struct Task {
     id: TaskId,

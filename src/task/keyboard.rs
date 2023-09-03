@@ -1,4 +1,4 @@
-use crate::{print, println};
+use crate::{print, println, vga_buffer::WRITER, task::task_loader::load_task};
 use conquer_once::spin::OnceCell;
 use core::{
     pin::Pin,
@@ -66,6 +66,8 @@ impl Stream for ScancodeStream {
     }
 }
 
+const SHELL: bool = true;
+
 pub async fn print_keypresses() {
     let mut scancodes = ScancodeStream::new();
     let mut keyboard = Keyboard::new(layouts::Us104Key, ScancodeSet1, HandleControl::Ignore);
@@ -73,8 +75,27 @@ pub async fn print_keypresses() {
     while let Some(scancode) = scancodes.next().await {
         if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
             if let Some(key) = keyboard.process_keyevent(key_event) {
+                //print key input
+                // if let DecodedKey::Unicode(character) = key {
+                //     println!("Received character: {:?} (Unicode: U+{:04X})", character, character as u32);
+                // }
                 match key {
-                    DecodedKey::Unicode(character) => print!("{}", character),
+                    DecodedKey::Unicode(character) => {
+                        if character == '\u{8}' {
+                            WRITER.lock().handle_backspace();
+                        } else {
+                            if SHELL {
+                                if character == '\n' {
+                                    let row = WRITER.lock().get_row();
+                                    match load_task(row){
+                                        Ok(()) => (),
+                                        Err(e) => println!("{}", e),
+                                    };
+                                }
+                            }
+                            print!("{}", character);
+                        }
+                    }
                     DecodedKey::RawKey(key) => print!("{:?}", key),
                 }
             }

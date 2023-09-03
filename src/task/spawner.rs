@@ -21,7 +21,7 @@ impl Spawner {
     pub fn add(&self, future: impl Future<Output = ()> + 'static) {
         let _ = self.0.push(Task::new(future));
     }
-    pub fn pop0(&self) -> Result<Task, PopError>{
+    pub fn pop0(&self) -> Result<Task, PopError> {
         self.0.pop()
     }
 }

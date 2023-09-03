@@ -5,10 +5,9 @@
 #![reexport_test_harness_main = "test_main"]
 
 extern crate alloc;
-
-use blog_os::println;
-use blog_os::task::spawner::{Spawner, SPAWNER};
-use blog_os::task::{executor::Executor, keyboard, Task};
+use blog_os::task::spawner::SPAWNER;
+use blog_os::task::{executor::Executor, keyboard};
+use blog_os::{println, vga_buffer};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
@@ -33,6 +32,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut executor = Executor::new();
 
     SPAWNER.lock().add(keyboard::print_keypresses());
+    SPAWNER.lock().add(vga_buffer::enable_cursor(0, 24));
     executor.run();
 }
 
@@ -48,15 +48,6 @@ fn panic(info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     blog_os::test_panic_handler(info)
-}
-
-async fn async_number() -> u32 {
-    42
-}
-
-async fn example_task() {
-    let number = async_number().await;
-    println!("async number: {}", number);
 }
 
 #[test_case]
