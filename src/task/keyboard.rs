@@ -87,7 +87,7 @@ pub async fn print_keypresses() {
                             if SHELL {
                                 if character == '\n' {
                                     let row = WRITER.lock().get_row();
-                                    match load_task(row){
+                                    match load_task(row).await{
                                         Ok(()) => (),
                                         Err(e) => println!("{}", e),
                                     };
