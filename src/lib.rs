@@ -3,7 +3,6 @@
 #![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
 #![feature(const_mut_refs)]
-#![feature(error_in_core)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
@@ -15,7 +14,7 @@ pub mod gdt;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
-pub mod shell;
+pub mod task;
 pub mod vga_buffer;
 
 pub fn init() {
